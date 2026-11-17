@@ -1,1 +1,0 @@
-export function churchHead(title:string,description:string){return {meta:[{title:`${title} | SDA Chuo Kikuu`},{name:'description',content:description},{property:'og:title',content:`${title} | SDA Chuo Kikuu`},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]};}
