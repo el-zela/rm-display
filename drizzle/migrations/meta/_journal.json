@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794921964701,
+      "tag": "0000_church_access_and_treasury",
+      "breakpoints": true
+    }
+  ]
 }
