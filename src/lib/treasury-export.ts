@@ -17,6 +17,11 @@ export async function exportTreasury(format:'pdf'|'excel',rows:Entry[],currency:
     autoTable(doc,{startY:54,head:[head],body,headStyles:{fillColor:[22,56,74]},styles:{fontSize:8}});
     doc.addPage();doc.text(`${currency} · Totals and category subtotals`,14,16);autoTable(doc,{startY:23,head:[['Summary',`Amount (${currency})`]],body:summaryRows,headStyles:{fillColor:[217,163,0],textColor:[22,56,74]}});doc.save('treasury-financial-report.pdf');
   }else{
-    const XLSX=await import('xlsx');const sheet=XLSX.utils.aoa_to_sheet([['Seventh Day Adventist Church'],['Chuo Kikuu'],[title],[],head,...body,[],['Summary',`Amount (${currency})`],...summaryRows]);sheet['!cols']=head.map(()=>({wch:24}));sheet['!merges']=[0,1,2].map(r=>({s:{r,c:0},e:{r,c:6}}));const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,sheet,'Treasury');XLSX.writeFile(book,'treasury-financial-report.xlsx');
+    const {default:ExcelJS}=await import('exceljs');const book=new ExcelJS.Workbook();const sheet=book.addWorksheet('Treasury');
+    sheet.columns=head.map(()=>({width:24}));sheet.addRows([[],[],[],[],['Seventh Day Adventist Church'],['Chuo Kikuu'],[title],[],head,...body,[],['Summary',`Amount (${currency})`],...summaryRows]);
+    for(const n of [5,6,7]){sheet.mergeCells(n,1,n,7);const cell=sheet.getCell(n,1);cell.alignment={horizontal:'center'};cell.font={bold:true,size:n===5?16:12,color:{argb:'FF16384A'}};}
+    if(image){const response=await fetch('/sdaLogo.png');const buffer=await response.arrayBuffer();const imageId=book.addImage({buffer,extension:'png'});sheet.addImage(imageId,{tl:{col:3,row:0},ext:{width:65,height:65}});}
+    for(const n of [9,11+body.length]){sheet.getRow(n).eachCell(cell=>{cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:n===9?'FF16384A':'FFD9A300'}};cell.font={bold:true,color:{argb:n===9?'FFFFFFFF':'FF16384A'}};});}
+    const buffer=await book.xlsx.writeBuffer();const url=URL.createObjectURL(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const link=document.createElement('a');link.href=url;link.download='treasury-financial-report.xlsx';link.click();URL.revokeObjectURL(url);
   }
 }
