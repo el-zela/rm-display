@@ -1,12 +1,12 @@
-# RM Display
+# RM Showcase
 
-create a simple page that only desplay RM
+just a simple page to desplay RM
 
 This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/c53c3114-a16b-48b7-8f7f-429ba00f86e3).
+Continue developing this project in the [Lovable editor](https://lovable.dev/).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
 - **Stay in sync**: every change made in Lovable is committed straight to this repository.
