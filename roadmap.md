@@ -1,5 +1,7 @@
 # Tasks
 
+- [ ] Correct the website and installed-app OTP forms shown in the screenshot: show passwords only in a drawer after confirmation.
+
 - [x] Show password creation and confirmation in a drawer only after OTP confirmation; verified valid and invalid OTPs on desktop and mobile.
 - [x] Verify direct NextSMS in the new workspace; existing credentials remain available and the official balance check returned HTTP 200.
 

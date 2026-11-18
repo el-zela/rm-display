@@ -1,3 +1,5 @@
+import SignupPasswordDrawer from "@/components/SignupPasswordDrawer";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Church, Eye, GraduationCap, LockKeyhole, LogIn, Phone, UserCheck, UserPlus, X } from "lucide-react";
@@ -5,7 +7,7 @@ import { isPWAEntryExperience } from "@/lib/pwa";
 import { getSession } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { sendOtp, signIn, validateNewPassword, verifyOtp } from "@/lib/auth";
+import { sendOtp, confirmOtp, signIn, validateNewPassword, verifyOtp } from "@/lib/auth";
 import PaymentDialog from "@/components/payments/PaymentDialog";
 import SplashScreen from "@/components/SplashScreen";
 
@@ -157,6 +159,22 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       setAuthError("Enter 6-digit OTP");
       return;
     }
+    setAuthLoading(true);
+    try {
+      await confirmOtp(phone, otp);
+      setPassword("");
+      setConfirmPassword("");
+      setAuthStep("password");
+    } catch (err: unknown) {
+      setAuthError(err instanceof Error ? err.message : "Invalid OTP");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const createPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
     const passwordError = validateNewPassword(password, confirmPassword);
     if (passwordError) {
       setAuthError(passwordError);
@@ -334,7 +352,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {authDropdown && (
+        {authDropdown && authStep !== "password" && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4"
             initial={{ opacity: 0 }}
@@ -361,7 +379,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                       {authStep === "otp" ? "Enter Code" : isSignup ? "Sign Up" : "Sign In"}
                     </h1>
                     <p className="text-white/80 text-sm drop-shadow-lg">
-                      {authStep === "otp" ? `OTP sent to ${phone}. Enter the code and create your password.` : isSignup ? "Enter name and phone to receive OTP" : "Enter your phone and password to sign in"}
+                      {authStep === "otp" ? `OTP sent to ${phone}. Enter the code to confirm.` : isSignup ? "Enter name and phone to receive OTP" : "Enter your phone and password to sign in"}
                     </p>
                     {authStep === "phone" && (
                       <div className="flex items-center justify-center gap-2 mt-4">
@@ -404,14 +422,9 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
-                    <div className="relative">
-                      <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
-                      <Input type="password" placeholder="Create password (8+ characters)" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 pl-12 rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 border-2 border-white/30 focus:border-gold" autoComplete="new-password" minLength={8} maxLength={128} />
-                    </div>
-                    <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-14 rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 border-2 border-white/30 focus:border-gold" autoComplete="new-password" minLength={8} maxLength={128} />
-                    <motion.button type="submit" disabled={authLoading || otp.length !== 6} className="w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      {authLoading ? "Verifying..." : "Create Password & Sign In"}
-                    </motion.button>
+                    <Button type="submit" disabled={authLoading || otp.length !== 6} className="w-full h-14 bg-primary text-primary-foreground">
+                    {authLoading ? "Verifying..." : "Confirm OTP"}
+                  </Button>
                     <div className="flex items-center justify-center gap-2 text-xs text-white/70">
                       <span>Didn't get code?</span>
                       <button type="button" onClick={resendOTP} disabled={otpCountdown > 0 || authLoading} className="text-gold hover:text-gold/80 font-semibold transition-colors disabled:opacity-50">
@@ -425,6 +438,14 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignupPasswordDrawer
+        open={Boolean(authDropdown) && authStep === "password"}
+        onClose={() => { setAuthStep("otp"); setAuthError(null); }}
+        password={password} confirmation={confirmPassword}
+        onPasswordChange={setPassword} onConfirmationChange={setConfirmPassword}
+        onSubmit={createPassword} loading={authLoading} error={authError}
+      />
 
       <PaymentDialog
         open={showPayment}
