@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean
@@ -344,6 +371,7 @@ export type Database = {
     }
     Functions: {
       approve_treasury_entry: { Args: { p_id: string }; Returns: undefined }
+      broadcast_weekly_sabbath_notification: { Args: never; Returns: undefined }
       flag_treasury_entry: {
         Args: { p_id: string; p_note: string; p_severity: string }
         Returns: undefined
@@ -365,6 +393,7 @@ export type Database = {
         }
         Returns: string
       }
+      reset_notifications_monthly: { Args: never; Returns: undefined }
       set_user_access: {
         Args: { p_active: boolean; p_role: string; p_user: string }
         Returns: undefined
