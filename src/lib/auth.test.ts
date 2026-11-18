@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { sendOtp, validateNewPassword } from "./auth";
+import { sendOtp, signIn, verifyOtp, validateNewPassword } from "./auth";
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@/lib/supabase/client", () => ({
@@ -16,6 +16,30 @@ describe("sendOtp", () => {
       },
     });
     await expect(sendOtp("0712345678")).rejects.toThrow("Failed to generate OTP");
+  });
+});
+
+describe("authentication service failures", () => {
+  it("preserves password sign-in failures", async () => {
+    invoke.mockResolvedValueOnce({ data: null, error: {
+      context: new Response(JSON.stringify({ error: "Namba ya simu au password si sahihi." }), { status: 401 }),
+    } });
+    await expect(signIn("0712345678", "wrong-password")).rejects.toThrow("Namba ya simu au password si sahihi.");
+  });
+
+  it("preserves OTP verification failures", async () => {
+    invoke.mockResolvedValueOnce({ data: null, error: {
+      context: new Response(JSON.stringify({ error: "Invalid or expired OTP" }), { status: 401 }),
+    } });
+    await expect(verifyOtp("0712345678", "000000", "salama123")).rejects.toThrow("Invalid or expired OTP");
+  });
+
+  it("uses the operation fallback when the service returns no readable reason", async () => {
+    invoke.mockResolvedValueOnce({ data: null, error: {
+      message: "Edge Function returned a non-2xx status code",
+      context: new Response("unavailable", { status: 502 }),
+    } });
+    await expect(sendOtp("0712345678")).rejects.toThrow("Imeshindwa kutuma OTP");
   });
 });
 

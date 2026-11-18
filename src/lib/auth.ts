@@ -69,11 +69,13 @@ async function getFunctionErrorMessage(error: unknown, fallback: string): Promis
     try {
       const body = await response.clone().json();
       if (typeof body?.error === "string") return body.error;
+      if (typeof body?.message === "string") return body.message;
     } catch {
       // Fall through to the SDK error message.
     }
   }
-  return (error as Error)?.message || fallback;
+  const message = (error as Error)?.message;
+  return message && message !== "Edge Function returned a non-2xx status code" ? message : fallback;
 }
 
 export function validateNewPassword(password: string, confirmation: string): string | null {
