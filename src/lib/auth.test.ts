@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { sendOtp, signIn, verifyOtp, validateNewPassword } from "./auth";
+import { sendOtp, signIn, verifyOtp, confirmOtp, validateNewPassword } from "./auth";
 
-const { invoke, requestSignupOtp } = vi.hoisted(() => ({ invoke: vi.fn(), requestSignupOtp: vi.fn() }));
-vi.mock("@/lib/sms.functions", () => ({ requestSignupOtp }));
+const { invoke, requestSignupOtp, confirmSignupOtp } = vi.hoisted(() => ({ invoke: vi.fn(), requestSignupOtp: vi.fn(), confirmSignupOtp: vi.fn() }));
+vi.mock("@/lib/sms.functions", () => ({ requestSignupOtp, confirmSignupOtp }));
 vi.mock("@/lib/supabase/client", () => ({
   createSupabaseClient: () => ({ functions: { invoke } }),
 }));
@@ -11,6 +11,18 @@ describe("sendOtp", () => {
   it("returns the service's error instead of the generic non-2xx error", async () => {
     requestSignupOtp.mockResolvedValueOnce({ success: false, error: "Failed to generate OTP" });
     await expect(sendOtp("0712345678")).rejects.toThrow("Failed to generate OTP");
+  });
+});
+
+describe("OTP confirmation before password creation", () => {
+  it("rejects an invalid code before the password step", async () => {
+    confirmSignupOtp.mockResolvedValueOnce({ success: false, error: "OTP si sahihi au imekwisha muda." });
+    await expect(confirmOtp("0712345678", "000000")).rejects.toThrow("OTP si sahihi au imekwisha muda.");
+  });
+  it("accepts a confirmed code without submitting a password or creating a session", async () => {
+    confirmSignupOtp.mockResolvedValueOnce({ success: true });
+    await expect(confirmOtp("0712345678", "123456")).resolves.toBeUndefined();
+    expect(confirmSignupOtp).toHaveBeenLastCalledWith({ data: { phone: "0712345678", otp: "123456" } });
   });
 });
 

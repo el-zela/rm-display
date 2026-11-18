@@ -1,5 +1,5 @@
 import { createSupabaseClient } from "@/lib/supabase/client";
-import { requestSignupOtp } from "@/lib/sms.functions";
+import { requestSignupOtp, confirmSignupOtp } from "@/lib/sms.functions";
 
 export interface AuthUser {
   id: string;
@@ -145,4 +145,9 @@ export async function verifyOtp(
 
   saveSession(session);
   return session;
+}
+
+export async function confirmOtp(phone: string, otp: string): Promise<void> {
+  const result = await withTimeout(confirmSignupOtp({ data: { phone, otp } }), 15000, "Kuthibitisha OTP");
+  if (!result.success) throw new Error(result.error || "OTP si sahihi au imekwisha muda.");
 }

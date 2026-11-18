@@ -1,7 +1,7 @@
 # Tasks
 
-- [ ] Show password creation and confirmation in a drawer only after OTP confirmation.
-- [ ] Restore NextSMS in the new workspace; clarify whether to retain direct credentials or use a connector.
+- [x] Show password creation and confirmation in a drawer only after OTP confirmation; verified valid and invalid OTPs on desktop and mobile.
+- [x] Verify direct NextSMS in the new workspace; existing credentials remain available and the official balance check returned HTTP 200.
 
 - [x] Connect NextSMS in the new workspace.
 - [x] Finish reviewing authentication error handling on the website, sign-in page and installed app.
