@@ -113,7 +113,7 @@ export async function sendOtp(phone: string, full_name?: string, role?: string) 
     "Kutuma OTP"
   );
 
-  if (error) throw new Error(error.message || "Failed to send OTP");
+  if (error) throw new Error(await getFunctionErrorMessage(error, "Imeshindwa kutuma OTP"));
   if (!data?.success) throw new Error(data?.error || "Failed to send OTP");
   return data;
 }

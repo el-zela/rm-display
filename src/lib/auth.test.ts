@@ -1,5 +1,23 @@
-import { describe, expect, it } from "vitest";
-import { validateNewPassword } from "./auth";
+import { describe, expect, it, vi } from "vitest";
+import { sendOtp, validateNewPassword } from "./auth";
+
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+vi.mock("@/lib/supabase/client", () => ({
+  createSupabaseClient: () => ({ functions: { invoke } }),
+}));
+
+describe("sendOtp", () => {
+  it("returns the service's error instead of the generic non-2xx error", async () => {
+    invoke.mockResolvedValueOnce({
+      data: null,
+      error: {
+        message: "Edge Function returned a non-2xx status code",
+        context: new Response(JSON.stringify({ error: "Failed to generate OTP" }), { status: 500 }),
+      },
+    });
+    await expect(sendOtp("0712345678")).rejects.toThrow("Failed to generate OTP");
+  });
+});
 
 describe("validateNewPassword", () => {
   it("rejects passwords shorter than 8 characters", () => {
