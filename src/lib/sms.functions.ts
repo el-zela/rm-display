@@ -11,8 +11,10 @@ const otpRequest = z.object({
 export const requestSignupOtp = createServerFn({ method: "POST" })
   .inputValidator((input: z.input<typeof otpRequest>) => otpRequest.parse(input))
   .handler(async ({ data }) => {
-    const { normalizePhone } = await import("./auth");
-    const phone = normalizePhone(data.phone);
+    const digits = data.phone.replace(/\D/g, "");
+    const phone = digits.startsWith("0")
+      ? `255${digits.slice(1)}`
+      : digits.startsWith("255") ? digits : `255${digits}`;
     if (!/^255[67]\d{8}$/.test(phone)) {
       return { success: false, error: "Tafadhali ingiza namba halali ya simu ya Tanzania." };
     }
