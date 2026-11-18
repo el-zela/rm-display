@@ -1,20 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { sendOtp, signIn, verifyOtp, validateNewPassword } from "./auth";
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+const { invoke, requestSignupOtp } = vi.hoisted(() => ({ invoke: vi.fn(), requestSignupOtp: vi.fn() }));
+vi.mock("@/lib/sms.functions", () => ({ requestSignupOtp }));
 vi.mock("@/lib/supabase/client", () => ({
   createSupabaseClient: () => ({ functions: { invoke } }),
 }));
 
 describe("sendOtp", () => {
   it("returns the service's error instead of the generic non-2xx error", async () => {
-    invoke.mockResolvedValueOnce({
-      data: null,
-      error: {
-        message: "Edge Function returned a non-2xx status code",
-        context: new Response(JSON.stringify({ error: "Failed to generate OTP" }), { status: 500 }),
-      },
-    });
+    requestSignupOtp.mockResolvedValueOnce({ success: false, error: "Failed to generate OTP" });
     await expect(sendOtp("0712345678")).rejects.toThrow("Failed to generate OTP");
   });
 });
@@ -35,11 +30,8 @@ describe("authentication service failures", () => {
   });
 
   it("uses the operation fallback when the service returns no readable reason", async () => {
-    invoke.mockResolvedValueOnce({ data: null, error: {
-      message: "Edge Function returned a non-2xx status code",
-      context: new Response("unavailable", { status: 502 }),
-    } });
-    await expect(sendOtp("0712345678")).rejects.toThrow("Imeshindwa kutuma OTP");
+    requestSignupOtp.mockResolvedValueOnce({ success: false });
+    await expect(sendOtp("0712345678")).rejects.toThrow("Failed to send OTP");
   });
 });
 

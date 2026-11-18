@@ -1,4 +1,5 @@
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { requestSignupOtp } from "@/lib/sms.functions";
 
 export interface AuthUser {
   id: string;
@@ -108,14 +109,12 @@ export async function signIn(phone: string, password: string): Promise<AuthSessi
 }
 
 export async function sendOtp(phone: string, full_name?: string, role?: string) {
-  const client = createSupabaseClient();
-  const { data, error } = await withTimeout(
-    client.functions.invoke("send-otp", { body: { phone, full_name, role } }),
+  const data = await withTimeout(
+    requestSignupOtp({ data: { phone, full_name, role } }),
     15000,
     "Kutuma OTP"
   );
 
-  if (error) throw new Error(await getFunctionErrorMessage(error, "Imeshindwa kutuma OTP"));
   if (!data?.success) throw new Error(data?.error || "Failed to send OTP");
   return data;
 }
