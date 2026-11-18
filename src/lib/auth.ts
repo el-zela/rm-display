@@ -1,5 +1,6 @@
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { requestSignupOtp, confirmSignupOtp } from "@/lib/sms.functions";
+import { signupAccount, passwordAccountProfile } from "@/lib/account.functions";
 
 export interface AuthUser {
   id: string;
@@ -10,6 +11,7 @@ export interface AuthUser {
 
 export interface AuthSession {
   access_token: string;
+  refresh_token?: string;
   expires_at: string;
   user_id: string;
   user: AuthUser;
@@ -30,6 +32,7 @@ export function normalizePhone(phone: string): string {
 
 export function saveSession(session: AuthSession): void {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  window.dispatchEvent(new Event("storage"));
 }
 
 export function getSession(): AuthSession | null {
@@ -49,6 +52,8 @@ export function getSession(): AuthSession | null {
 
 export function clearSession(): void {
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  void createSupabaseClient().auth.signOut();
+  window.dispatchEvent(new Event("storage"));
 }
 
 // Helper: race a promise against a timeout so the UI doesn't hang on slow/cold edge functions
@@ -89,19 +94,20 @@ export function validateNewPassword(password: string, confirmation: string): str
 export async function signIn(phone: string, password: string): Promise<AuthSession> {
   const client = createSupabaseClient();
   const { data, error } = await withTimeout(
-    client.functions.invoke("sign-in", { body: { phone, password } }),
+    client.auth.signInWithPassword({ email: `${normalizePhone(phone)}@phone.chuokikuu.invalid`, password }),
     10000,
     "Kuingia"
   );
 
-  if (error) throw new Error(await getFunctionErrorMessage(error, "Imeshindwa kuingia"));
-  if (!data?.success) throw new Error(data?.error || "Failed to sign in");
+  if (error || !data.session) throw new Error(error?.code === "invalid_credentials" ? "Namba ya simu au password si sahihi." : await getFunctionErrorMessage(error, "Imeshindwa kuingia"));
+  const user = await passwordAccountProfile({ data: { access_token: data.session.access_token } });
 
   const session: AuthSession = {
-    access_token: data.access_token,
-    expires_at: data.expires_at,
-    user_id: data.user_id,
-    user: data.user,
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+    expires_at: new Date((data.session.expires_at ?? 0) * 1000).toISOString(),
+    user_id: user.id,
+    user,
   };
 
   saveSession(session);
@@ -126,25 +132,13 @@ export async function verifyOtp(
   full_name?: string,
   role?: string,
 ): Promise<AuthSession> {
-  const client = createSupabaseClient();
-  const { data, error } = await withTimeout(
-    client.functions.invoke("verify-otp", { body: { phone, otp, password, full_name, role } }),
+  await withTimeout(
+    signupAccount({ data: { phone, otp, password, full_name, role } }),
     15000,
     "Kuthibitisha OTP"
   );
 
-  if (error) throw new Error(await getFunctionErrorMessage(error, "Imeshindwa kuthibitisha OTP"));
-  if (!data?.success) throw new Error(data?.error || "Failed to verify OTP");
-
-  const session: AuthSession = {
-    access_token: data.access_token,
-    expires_at: data.expires_at,
-    user_id: data.user_id,
-    user: data.user,
-  };
-
-  saveSession(session);
-  return session;
+  return signIn(phone, password);
 }
 
 export async function confirmOtp(phone: string, otp: string): Promise<void> {

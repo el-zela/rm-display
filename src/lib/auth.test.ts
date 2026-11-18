@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { sendOtp, signIn, verifyOtp, confirmOtp, validateNewPassword } from "./auth";
 
-const { invoke, requestSignupOtp, confirmSignupOtp } = vi.hoisted(() => ({ invoke: vi.fn(), requestSignupOtp: vi.fn(), confirmSignupOtp: vi.fn() }));
+const { signInWithPassword, signupAccount, passwordAccountProfile, requestSignupOtp, confirmSignupOtp } = vi.hoisted(() => ({ signInWithPassword: vi.fn(), signupAccount: vi.fn(), passwordAccountProfile: vi.fn(), requestSignupOtp: vi.fn(), confirmSignupOtp: vi.fn() }));
 vi.mock("@/lib/sms.functions", () => ({ requestSignupOtp, confirmSignupOtp }));
+vi.mock("@/lib/account.functions", () => ({ signupAccount, passwordAccountProfile }));
 vi.mock("@/lib/supabase/client", () => ({
-  createSupabaseClient: () => ({ functions: { invoke } }),
+  createSupabaseClient: () => ({ auth: { signInWithPassword } }),
 }));
 
 describe("sendOtp", () => {
@@ -28,16 +29,12 @@ describe("OTP confirmation before password creation", () => {
 
 describe("authentication service failures", () => {
   it("preserves password sign-in failures", async () => {
-    invoke.mockResolvedValueOnce({ data: null, error: {
-      context: new Response(JSON.stringify({ error: "Namba ya simu au password si sahihi." }), { status: 401 }),
-    } });
+    signInWithPassword.mockResolvedValueOnce({ data: { session: null }, error: { code: "invalid_credentials" } });
     await expect(signIn("0712345678", "wrong-password")).rejects.toThrow("Namba ya simu au password si sahihi.");
   });
 
   it("preserves OTP verification failures", async () => {
-    invoke.mockResolvedValueOnce({ data: null, error: {
-      context: new Response(JSON.stringify({ error: "Invalid or expired OTP" }), { status: 401 }),
-    } });
+    signupAccount.mockRejectedValueOnce(new Error("Invalid or expired OTP"));
     await expect(verifyOtp("0712345678", "000000", "salama123")).rejects.toThrow("Invalid or expired OTP");
   });
 

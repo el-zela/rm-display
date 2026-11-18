@@ -11,11 +11,11 @@ export function initializeSupabaseClient(): void {
   // as the right user when the app uses the legacy phone-OTP session model.
   try {
     const session = getSession();
-    if (session?.access_token && typeof window !== "undefined") {
+    if (session?.access_token && session.refresh_token && typeof window !== "undefined") {
       // Best-effort: set session for SDK auth.* helpers. Edge functions read
       // their own access_token from request headers, so this is mostly a no-op.
       (supabase.auth as any)
-        .setSession?.({ access_token: session.access_token, refresh_token: "" })
+        .setSession?.({ access_token: session.access_token, refresh_token: session.refresh_token })
         .catch(() => {});
     }
   } catch {
