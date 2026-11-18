@@ -1,5 +1,7 @@
 # Tasks
 
+- [x] Repair missing browser Cloud configuration preventing password submission; real drawer submission now reaches the signup service and reports the separate existing account-creation failure.
+
 - [x] Correct the website and installed-app OTP forms shown in the screenshot: verified OTP-only entry and password drawer after real OTP confirmation on desktop and mobile.
 
 - [x] Show password creation and confirmation in a drawer only after OTP confirmation; verified valid and invalid OTPs on desktop and mobile.
