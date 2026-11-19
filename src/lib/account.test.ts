@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { completeAccountSignup } from "./account.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-function fixture(valid: boolean, creationFails = false, claimAvailable = true) {
+function fixture(valid: boolean, creationFails = false, claimAvailable = true, creationError: Record<string, string> = { message: "Database error" }) {
   const calls: Array<{ table: string; operation: string; value?: unknown }> = [];
   let lookup = 0;
   const admin = {
@@ -18,7 +18,7 @@ function fixture(valid: boolean, creationFails = false, claimAvailable = true) {
       return chain;
     },
     auth: { admin: {
-      createUser: vi.fn(async (_attributes: unknown) => ({ data: { user: creationFails ? null : { id: "new-account" } }, error: creationFails ? { message: "Database error" } : null })),
+      createUser: vi.fn(async (_attributes: unknown) => ({ data: { user: creationFails ? null : { id: "new-account" } }, error: creationFails ? creationError : null })),
       deleteUser: vi.fn(async () => ({ error: null })),
     } },
   };
@@ -46,6 +46,10 @@ describe("account creation after OTP", () => {
     const f = fixture(true, true);
     await expect(completeAccountSignup(f.client, input)).rejects.toThrow("kutengeneza akaunti");
     expect(f.calls).toContainEqual({ table: "otp_codes", operation: "update", value: { verified: false } });
+  });
+  it("tells the user when the password is rejected as weak or leaked", async () => {
+    const f = fixture(true, true, true, { code: "weak_password", message: "Password is known to be weak" });
+    await expect(completeAccountSignup(f.client, input)).rejects.toThrow("Chagua password nyingine");
   });
   it("does not grant privileged access requested by signup", async () => {
     const f = fixture(true);

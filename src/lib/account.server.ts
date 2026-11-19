@@ -41,6 +41,9 @@ export async function completeAccountSignup(admin: SupabaseClient, input: {
       if (error?.code === "email_exists" || error?.message?.includes("already")) {
         throw new Error("Namba hii imesajiliwa tayari. Tafadhali ingia kwa password yako.");
       }
+      if (error?.code === "weak_password") {
+        throw new Error("Password hii ni rahisi kukisiwa au imeshavuja mtandaoni. Chagua password nyingine yenye herufi, namba na alama (mfano: Kanisa#2026Chuo).");
+      }
       throw new Error("Imeshindwa kutengeneza akaunti. Tafadhali jaribu tena.");
     }
     createdId = data.user.id;
