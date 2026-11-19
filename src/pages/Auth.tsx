@@ -245,7 +245,7 @@ const Auth = () => {
                       OTP imetumwa kwa {normalizePhone(phone)}
                     </p>
                   </div>
-                  <Button onClick={handleConfirmOtp} className="w-full" disabled={loading}>
+                  <Button onClick={handleConfirmOtp} className="w-full bg-gold text-accent-foreground hover:bg-gold-dark" disabled={loading}>
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Thibitisha OTP
                   </Button>

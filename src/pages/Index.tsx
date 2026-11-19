@@ -596,7 +596,7 @@ const totalCollected = data?.total_collected ?? 0;
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
-                  <Button type="submit" disabled={authLoading || otp.length !== 6} className="w-full h-14 bg-primary text-primary-foreground">
+                  <Button type="submit" disabled={authLoading || otp.length !== 6} className="w-full h-14 bg-gold text-accent-foreground hover:bg-gold-dark">
                     {authLoading ? "Verifying..." : "Confirm OTP"}
                   </Button>
                   <div className="flex items-center justify-center gap-2 text-xs text-white/70">
